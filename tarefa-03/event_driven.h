@@ -12,7 +12,7 @@ extern "C" {
   // User controlled setup
   void user_init();
 
-  // Macros for client users to not have to implement callbacks
+  // Symbols for clients to use so that they don't have to implement unnecessary callbacks
   #define TIMER_OFF  void timer_expired(){}
   #define BUTTON_OFF void button_changed(int pin, int value){}
 #ifdef __cplusplus
