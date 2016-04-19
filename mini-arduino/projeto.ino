@@ -2,47 +2,55 @@
 
 #define _offset -50
 
+#define SERVO_LEFT     13
+#define SERVO_RIGHT    12
+#define SENSOR_ONE_IN  10
+#define SENSOR_ONE_OUT  9
+#define SENSOR_TWO_IN   3
+#define SENSOR_TWO_OUT  2
+#define BUZZER          4
+
+#define FREQ_RANGE_LOWER 38000
+#define FREQ_RANGE_UPPER 42000
+
 Servo servoLeft;                             
 Servo servoRight;
 
 const int setpoint = 2;                      
 unsigned long then;
-int blocked, not_blocked;
 int i = 1;
  
 void setup()                                 
 { 
-  pinMode(10, INPUT);  
-  pinMode(9, OUTPUT);   
-  pinMode(3, INPUT);  
-  pinMode(2, OUTPUT);    
+  pinMode(SENSOR_ONE_IN, INPUT);  
+  pinMode(SENSOR_ONE_OUT, OUTPUT);   
+  pinMode(SENSOR_TWO_IN, INPUT);  
+  pinMode(SENSOR_TWO_OUT, OUTPUT);    
   
   then = millis();
-  blocked = 0;
-  not_blocked = 0;
 
-  servoLeft.attach(13);                      
-  servoRight.attach(12);                    
+  servoLeft.attach(SERVO_LEFT);                      
+  servoRight.attach(SERVO_RIGHT);                    
 }  
  
 void loop()                                  
 {
-  int sensorLeft = sensorDistance(9, 10);            
-  int sensorRight = sensorDistance(2, 3);           
+  int sensorLeft = sensorDistance(SENSOR_ONE_OUT, SENSOR_ONE_IN);            
+  int sensorRight = sensorDistance(SENSOR_TWO_OUT, SENSOR_TWO_IN);           
   
   // Something is in front of the car
   if (!sensorLeft || !sensorRight) {
     // Stop the car
     setServo(0, 0, 2000);
     // Honks 
-    tone(4, 3000, 500);
+    tone(BUZZER, 3000, 500);
     delay(1000);
-    tone(4, 3000, 500);
+    tone(BUZZER, 3000, 500);
     delay(2000);
     
     // check if obstacle remains in front of car
-    sensorLeft = sensorDistance(9, 10);            
-    sensorRight = sensorDistance(2, 3); 
+    sensorLeft = sensorDistance(SENSOR_ONE_OUT, SENSOR_ONE_IN);            
+    sensorRight = sensorDistance(SENSOR_TWO_OUT, SENSOR_TWO_IN); 
     if (!sensorLeft || !sensorRight) {
       // Changes direction
        setServo(-200, 200, 1000);
@@ -59,7 +67,7 @@ void loop()
 int sensorDistance(int sensorLedPin, int sensorReceivePin)
 {  
   int distance = 0;
-  for(long f = 38000; f <= 42000; f += 1000) {
+  for(long f = FREQ_RANGE_LOWER; f <= FREQ_RANGE_UPPER; f += 1000) {
     distance += sensorDetect(sensorLedPin, sensorReceivePin, f);
   }
   return distance;
