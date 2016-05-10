@@ -118,6 +118,7 @@ class Player with
     var _SDL_Rect r;
     event void collided;
 do
+    var int init_h = this.r.h;
     var int init_y = (480-this.r.h) * 1000;
     var int jump_speed = 100;
     var int x = (640/2 - 20/2) * 1000;
@@ -125,12 +126,28 @@ do
     var int vx = 0;
     var int vy = 0;
 
+
     par/or do
         loop do
             await this.collided;
             this.r.h = this.r.h - 5;
             init_y = (480-this.r.h) * 1000;
             if this.r.h <= 0 then break; end
+        end
+    with 
+        // allow player to regrow after a collision if 10 seconds pass
+        // and another collision does not happen
+        loop do
+            par/or do
+                await 10s;
+                if this.r.h < init_h then
+                    this.r.h = this.r.h + 5;
+                    init_y = (480-this.r.h) * 1000;
+                end
+            with
+                // do not r if collision happens inbetween recoveries
+                await this.collided; 
+            end
         end
     with
         every dt in SDL_DT do // pulo
@@ -203,7 +220,7 @@ with
     var int blue  = _rand() % 256;
     
     var int t = 500;
-    var int base_speed  = 30;
+    var int base_speed  = 20;
     var int speed_boost = 10;
     watching p do
         par do
@@ -227,11 +244,13 @@ with
         with
             // make meteors faster and more frequent
             loop do
-                await 10s; 
+                await 15s; 
                 base_speed = base_speed * 2;
                 speed_boost = speed_boost + 10;
-                t = t/2;
-                if base_speed < 100 then break; end
+                if base_speed > 59 then 
+                    t = 300;
+                    break;
+                end
             end
         with
             every SDL_DT do
