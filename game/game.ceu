@@ -29,20 +29,63 @@ var _SDL_Renderer&? renderer;
         _SDL_DestroyRenderer(&&renderer!);
     end
 
+class Background with
+    var _SDL_Renderer& ren;
+    event void purple;
+do
+    par/or do
+        every SDL_REDRAW do
+            _SDL_SetRenderDrawColor(&&this.ren, 0xFF,0xFF,0xFF,0x00);
+            _SDL_RenderFillRect(&&this.ren, null);
+        end
+    with
+        await this.purple;
+    end
+
+    var int red = 255;
+    var int green = 255;
+    var int blue = 255;
+    loop do
+        watching 50ms do     
+            red = red - 2; 
+            if red < 0xD8 then
+                red = 0xD8;
+            end
+    
+            green = green - 2;
+            if green < 0xBF then
+                green = 0xBF;
+            end
+            
+            blue = blue - 2;
+            if blue < 0xD8 then
+                blue = 0xD8;
+            end
+   
+            every SDL_REDRAW do
+                 _SDL_SetRenderDrawColor(&&this.ren, red,green,blue,0);
+                 _SDL_RenderFillRect(&&this.ren, null);
+            end   
+        end
+    end
+end
+
 class Meteor with
     var _SDL_Renderer& ren;
     var _SDL_Rect      r;
+	
+    var int vx;
+    var int vy;
+
     var int red;
     var int green;
     var int blue;
     event void collided;
 do  
-    var int x  = (_rand() % 640) * 1000;
+    var int x  = 5 + (_rand() % 635) * 1000;
     var int y  = -this.r.h * 1000;
-    var int speed_boost = 10;
-    var int vx = 20 + _rand() % speed_boost; // right
-    var int vy = 20 + _rand() % speed_boost;
-
+    
+    // Set horizontal direction; default is right
     var int direction = _rand() % 3;
     if direction == 0 then 
         vx = vx * -1; // left
@@ -59,7 +102,6 @@ do
             y = y + vy * dt;
         end
     with
-        
         every SDL_REDRAW do
             _SDL_SetRenderDrawColor(&&this.ren, red, green, blue, 0x00);
             this.r.x = x / 1000;
@@ -132,8 +174,7 @@ do
         end
     with
         every SDL_REDRAW do
-            _SDL_SetRenderDrawColor(&&this.ren,
-                                    0x00,0x00,0x00,0x00);
+            _SDL_SetRenderDrawColor(&&this.ren,0x00,0x00,0x00,0x00);
             r.x = x / 1000;
             r.y = y / 1000;
             _SDL_RenderFillRect(&&this.ren, &&r);
@@ -146,11 +187,10 @@ _srand(_time(null));
 par/or do
     await SDL_QUIT;
 with
-    every SDL_REDRAW do
-        _SDL_SetRenderDrawColor(&&renderer!, 0xFF,0xFF,0xFF,0x00);
-        _SDL_RenderFillRect(&&renderer!, null);
-    end
-with
+    var Background bg with
+        this.ren = &renderer!;
+    end;
+
     var Player p with
         this.ren = &renderer!;
         this.r = _SDL_Rect(0,0,20,50);
@@ -163,18 +203,35 @@ with
     var int blue  = _rand() % 256;
     
     var int t = 500;
+    var int base_speed  = 30;
+    var int speed_boost = 10;
     watching p do
         par do
             every (t)ms do
                 spawn Meteor in meteors with
                     var int w = 10 + _rand()%40;
                     var int h = 10 + _rand()%40;
+
+                    var int vx = base_speed + _rand() % speed_boost; // right
+                    var int vy = base_speed + _rand() % speed_boost;
+
                     this.ren = &renderer!;
                     this.r   = _SDL_Rect(0,0,w,h);
+                    this.vx = vx;
+                    this.vy = vy;
                     this.red   = red;
                     this.green = green;
                     this.blue  = blue;
                 end;
+            end
+        with
+            // make meteors faster and more frequent
+            loop do
+                await 10s; 
+                base_speed = base_speed * 2;
+                speed_boost = speed_boost + 10;
+                t = t/2;
+                if base_speed < 100 then break; end
             end
         with
             every SDL_DT do
@@ -202,6 +259,7 @@ with
                 key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_e;
 
                 _SDL_SetWindowTitle(&&window!, "Evade the PURPLE Rain!");
+                emit bg.purple;
             with    
                 every (t)ms do
                     red   = _rand() % 256;
@@ -216,7 +274,6 @@ with
             end
         end
     end
-    _printf("##############################################\n\n      Game Over! Thanks for playing!!!\n\n##############################################\n\n");
 with
     every SDL_REDRAW do
         _SDL_RenderPresent(&&renderer!);
@@ -225,5 +282,9 @@ with
     var _SDL_KeyboardEvent&& key;
     key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_ESCAPE;
 end
+
+_printf("\n##############################################\n\n");
+_printf("            Thanks for playing!!!\n");
+_printf("\n##############################################\n\n");
 
 escape 0;
