@@ -43,7 +43,8 @@ if nodeLine == 1 then
   parentId = 10*nodeCol + 1; 
 end
 
-var ushort tempWait = nodeLayer * 2000 + nodeId * 17; //2000 * nodeLayer + 100 * nodeCol + 50 * nodeLine;
+// Max time: ~12s (for node 88; lower for others); change here to make it more strict
+var ushort tempWait = nodeLayer * 1250 + nodeId * 17;
 
 // Node 11's parent is the base station.
 // Construct the tree in a more deterministic fashion, trying to
