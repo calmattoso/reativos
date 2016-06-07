@@ -56,32 +56,35 @@ par/or do
     emit SEND(message);
     await SEND_DONE;  
   else
-    // Keep looking for a parent until a message comes from someone in a previous layer
-    message = await RECEIVE;
-    recCol   = message.source/10;
-    recLayer = recCol;
-    recLine  = message.source - 10*recCol;
-    if recLine > recCol then
-      recLayer = recLine;
-    end
-
-    // if the message was sent by a node from the previous layer
-    if recLayer < nodeLayer then
-      parentId = message.source;  
-      message.target = BROADCAST;
-      message.source = nodeId;
-    
-      // nodes at the corner of a layer wait longer, so they're
-      // the last one to broadcast; otherwise, they could end up 
-      // with a disproportionate number of children
-      if nodeCol == nodeLine then
-        await (150 + 100 * nodeLayer)ms;
-      else
-        await (nodeLayer * 100)ms;
+    loop do
+      message = await RECEIVE;
+      recCol   = message.source/10;
+      recLayer = recCol;
+      recLine  = message.source - 10*recCol;
+      if recLine > recCol then
+        recLayer = recLine;
       end
-  
-      emit SEND(message);
-      await SEND_DONE;
+
+      // if the message was sent by a node from the previous layer
+      if recLayer < nodeLayer then
+        parentId = message.source;  
+        message.target = BROADCAST;
+        message.source = nodeId;
+      
+        // nodes at the corner of a layer wait longer, so they're
+        // the last one to broadcast; otherwise, they could end up 
+        // with a disproportionate number of children
+        if nodeCol == nodeLine then
+          await (150 + 100 * nodeLayer)ms;
+        else
+          await (nodeLayer * 100)ms;
+        end
+    
+        emit SEND(message);
+        await SEND_DONE;
+
+        break;
+      end
     end
   end
 with
